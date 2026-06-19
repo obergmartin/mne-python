@@ -189,7 +189,11 @@ def test_io_egi_mff(events_as_annotations):
         assert "STI 014" not in raw.ch_names
         assert raw.event_id is None
         event_id = {"DIN1": 1, "DIN2": 2, "DIN3": 3, "DIN4": 4, "DIN5": 5, "DIN7": 7}
+        id_event = {v: k for k, v in event_id.items()}
         events, _ = events_from_annotations(raw, event_id=event_id)
+        labels_annot = [a["extras"]["label"] for a in raw.annotations]
+        labels_events = [id_event[int(x)] for x in events[:, 2]]
+        assert labels_annot == labels_events
     else:
         assert "STI 014" in raw.ch_names
         events = find_events(raw, stim_channel="STI 014")
@@ -333,6 +337,24 @@ def test_io_egi_pns_mff(tmp_path):
         mat_data = mc[mc_key] * cal
         raw_data = raw[ch_idx][0]
         assert_array_equal(mat_data, raw_data)
+
+    # EEG missing
+    new_mff = tmp_path / "temp.mff"
+    copytree_rw(egi_mff_pns_fname, new_mff)
+    read_raw_egi(new_mff, verbose="error")
+    os.remove(new_mff / "info1.xml")
+    os.remove(new_mff / "signal1.bin")
+    with pytest.raises(FileNotFoundError, match="Could not find any EEG"):
+        read_raw_egi(new_mff, verbose="error")
+
+
+@requires_testing_data
+def test_io_egi_extras(tmp_path):
+    """Test importing EGI MFF with PNS data."""
+    pytest.importorskip("defusedxml")
+    raw = read_raw_egi(egi_mff_fname, include=None,
+                       preload=True, verbose="error")
+    assert "RawMff" in repr(raw)
 
     # EEG missing
     new_mff = tmp_path / "temp.mff"
