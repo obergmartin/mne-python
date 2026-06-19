@@ -75,7 +75,14 @@ def _read_mff_events(filename, sfreq, start_time):
             event_start = event["beginTime"]
             start_sec = (event_start - start_time).total_seconds()
             duration = event["duration"] / 1e9
-            extras = dict(label=event["label"], desc=event["description"])
+            if "label" in event or "description" in event:
+                extras = dict(
+                    label=event["label"],
+                    # description is reserved
+                    desc=event["description"]
+                )
+            else:
+                extras = {}
 
             markers.append(
                 {
