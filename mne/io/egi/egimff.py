@@ -580,6 +580,8 @@ class RawMff(BaseRaw):
                 annot["description"].extend([code] * len(samples))
                 annot["extras"].extend(extras)
 
+        if annot['extras'] == []:
+            annot['extras'] = None
         if len(annot["onset"]):
             self.set_annotations(Annotations(**annot))
 
